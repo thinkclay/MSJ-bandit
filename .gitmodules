@@ -1,0 +1,21 @@
+[submodule "system"]
+	path = system
+	url = git://github.com/kohana/core.git
+[submodule "modules/annex"]
+	path = modules/annex
+	url = git://github.com/thinkclay/KO3-Annex.git
+[submodule "modules/kostache"]
+	path = modules/kostache
+	url = git://github.com/zombor/KOstache.git
+[submodule "modules/bandit"]
+	path = modules/bandit
+	url = git@github.com:thinkclay/KO3-Bandit.git
+[submodule "modules/peruse"]
+	path = modules/peruse
+	url = git@github.com:thinkclay/KO3-Peruse.git
+[submodule "modules/minion"]
+	path = modules/minion
+	url = git://github.com/kohana/minion.git
+[submodule "modules/mango"]
+	path = modules/mango
+	url = git://github.com/Wouterrr/MangoDB.git
