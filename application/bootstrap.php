@@ -110,15 +110,10 @@ Kohana::modules(array(
     'annex'       => MODPATH.'annex',       // Our custom CMS system
     'bandit'      => MODPATH.'bandit',      // Our custom scrape system
     'minion'      => MODPATH.'minion',      // Our CLI task manager
-    'cache'       => MODPATH.'cache',       // Caching with multiple backends
-    'codebench'   => MODPATH.'codebench',   // Benchmarking tool
     'image'       => MODPATH.'image',       // Image manipulation
     'kostache'    => MODPATH.'kostache',    // Mustache Templating Engine
-    'pagination'  => MODPATH.'pagination',  // Paging of results
-    'unittest'    => MODPATH.'unittest',    // Unit testing
     'peruse'      => MODPATH.'peruse',      // New Scrape Engine base off old scrape
     'scrape'      => MODPATH.'scrape',      // For mugshot and profile data webscrape
-    'admin'       => MODPATH.'admin',       // admin module for reporting and management
     'mango'       => MODPATH.'mango',       // Mongo ORM
 ));
 
