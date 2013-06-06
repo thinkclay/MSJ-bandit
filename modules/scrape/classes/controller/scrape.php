@@ -20,6 +20,11 @@ class Controller_Scrape extends Controller
         // }
     }
 
+    public function action_index()
+    {
+        echo 'hello scraper';
+    }
+
     private function print_r2($val)
     {
         echo '<pre>';
