@@ -22,7 +22,8 @@ class Model_Florida_Palmbeach extends Model_Bandit
 
     protected $urls = [
         'main'      => 'http://www.pbso.org/index.cfm?fa=blotter',
-        'image'     => 'http://services.palmbeachpost.com/editorial/blotter/static/images/pbso_2013023001.jpg'
+        'image'     => 'http://services.palmbeachpost.com/editorial/blotter/static/images/pbso_2013023001.jpg',
+        'news'      => 'http://www.palmbeachpost.com/s/blotter/'
     ];
 
     protected $errors = FALSE;
