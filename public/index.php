@@ -96,6 +96,7 @@ if ( ! defined('KOHANA_START_MEMORY'))
 // Bootstrap the application
 require APPPATH.'bootstrap'.EXT;
 
+/*
 if (PHP_SAPI == 'cli') // Try and load minion
 {
 	class_exists('Minion_Task') OR die('Please enable the Minion module for CLI support.');
@@ -105,6 +106,7 @@ if (PHP_SAPI == 'cli') // Try and load minion
 }
 else
 {
+*/
 	/**
 	 * Execute the main request. A source of the URI can be passed, eg: $_SERVER['PATH_INFO'].
 	 * If no source is specified, the URI will be automatically detected.
@@ -113,4 +115,4 @@ else
 		->execute()
 		->send_headers(TRUE)
 		->body();
-}
+
