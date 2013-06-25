@@ -1705,7 +1705,7 @@ class Controller_Scrape extends Controller
 
     public function action_kent()
     {
-        $kent = new Model_Kent();
+        $kent = new Model_Michigan_Kent();
         $scrape = 'kent';
         $ncharges = array();
         # lets loop through the past 5 days

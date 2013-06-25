@@ -11,6 +11,7 @@
  **/
 class Model_Scrape extends Model
 {
+    var $report = NULL;
     # vars for table extractor
 	var $source			= NULL;
     var $anchor			= NULL;

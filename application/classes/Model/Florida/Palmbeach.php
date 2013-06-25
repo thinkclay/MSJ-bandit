@@ -37,6 +37,7 @@ class Model_Florida_Palmbeach extends Model_Bandit
      */
     public function __construct()
     {
+    echo 'here'; exit;
         if ( file_exists($this->cookie) )
             unlink($this->cookie);   // Unlink only works for files, use rmdir for Directories.
 
@@ -101,7 +102,9 @@ class Model_Florida_Palmbeach extends Model_Bandit
 
         $list = $this->clean_html($list['result']);
 
-        echo $list; exit;
+        echo $list; 
+        exit;
+        
         $dom = new DOMDocument();
 
         if ( ! $dom->loadHTML($list) )

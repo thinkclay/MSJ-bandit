@@ -12,7 +12,7 @@
  *              and scrape all new offenders
  * @url https://www.accesskent.com/InmateLookup/searchPrev.do
  */
-class Model_Kent extends Model_Scrape
+class Model_Michigan_Kent extends Model_Scrape
 {
     private $scrape = 'kent';
     private $state  = 'michigan';
@@ -20,6 +20,35 @@ class Model_Kent extends Model_Scrape
 
     public function __construct()
     {
+        $ncharges = $days_array = [];
+
+        // lets loop through the past 7 days
+        $date = date('m/d/Y');
+        $time = strtotime($date);
+        
+        for ( $i = 0; $i < 5; $i++)
+        {
+            if ( $i == 0 ) 
+            { 
+                $days_array[] = $time; 
+            }
+            else
+            {
+                $time = $time - 86400;
+                $days_array[] = $time;
+            }
+        }
+
+        foreach ($days_array as $day)
+        {
+            $this->scrape($day);
+        }
+        // check for any duplicate booking_ids and delete them
+        $this->bid_dupe_check($scrape);
+        // check for duplicate firstname, lastname, and booking_id and flag them
+        $this->profile_dupe_check($scrape);
+        
+    
         set_time_limit(86400); // make it go forever
         if ( file_exists($this->cookies) )
         {
@@ -112,22 +141,11 @@ class Model_Kent extends Model_Scrape
                 {
                     $details = $this->curl_details($booking_id);
                     $extraction = $this->extraction($details, $booking_id);
-                    if ($extraction == 100) { $this->report->successful = ($this->report->successful + 1); $this->report->update(); }
-                    if ($extraction == 101) { $this->report->other = ($this->report->other + 1); $this->report->update(); }
-                    if ($extraction == 102) { $this->report->bad_images = ($this->report->bad_images + 1); $this->report->update(); }
-                    if ($extraction == 103) { $this->report->exists = ($this->report->exists + 1); $this->report->update(); }
-                    if ($extraction == 104) { $this->report->new_charges = ($this->report->new_charges + 1); $this->report->update(); }
-                    $this->report->total = ($this->report->total + 1); $this->report->update();
                 } // end rows loop
             } // empty results validation
         } // end paging loop
-        $this->report->failed = ($this->report->other + $this->report->bad_images + $this->report->exists + $this->report->new_charges);
-        $this->report->finished = 1;
-        $this->report->stop_time = time();
-        $this->report->time_taken = ($this->report->stop_time - $this->report->start_time);
-        $this->report->update();
-
-        return true;
+        
+        return TRUE;
     }
 
     function curl_homepage()
