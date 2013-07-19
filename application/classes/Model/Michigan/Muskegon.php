@@ -68,8 +68,8 @@ class Model_Michigan_Muskegon extends Model_Bandit
                 'nd'        => '1369948241492',
                 'rows'      => '10000',
                 'page'      => '1',
-                'sidx'      => 'disp_name',
-                'sord'      => 'asc'
+                'sidx'      => 'date_arr',
+                'sord'      => 'desc'
             ]
         ]);
 
@@ -132,6 +132,8 @@ class Model_Michigan_Muskegon extends Model_Bandit
             $post['ctl00$MasterPage$mainContent$CenterColumnContent$hfRecordIndex'] = $i;
 
             $this->get_mug($post);
+            
+            exit;
             sleep(rand(5,100));
         }
 
