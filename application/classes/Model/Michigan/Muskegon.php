@@ -83,7 +83,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
             $doc = Brass::factory('Brass_Offender', [
                 'booking_id' => $this->name.'_'.$row->book_id
             ])->load();
-
+            
             $this->_offender = [
                 'booking_id'    => $this->name.'_'.$row->book_id,
                 'scrape_time'   => time(),
@@ -100,17 +100,18 @@ class Model_Michigan_Muskegon extends Model_Bandit
                 'county'        => $this->county,
                 'scrape'        => $this->name
             ];
+            
+            // Record already exists
+            if ( $doc->loaded() )
+                $doc->delete();
 
             try
             {
-                if ( ! $doc->loaded() )
+                $doc->values($this->_offender);
+                
+                if ( $doc->check() )
                 {
-                    $doc->values($this->_offender);
-
-                    if ( $doc->check() )
-                    {
-                        $doc->create();
-                    }
+                    $doc->create();
                 }
             }
             catch ( Brass_Validation_Exception $e )
@@ -133,7 +134,6 @@ class Model_Michigan_Muskegon extends Model_Bandit
 
             $this->get_mug($post);
             
-            exit;
             sleep(rand(5,100));
         }
 
@@ -225,15 +225,15 @@ class Model_Michigan_Muskegon extends Model_Bandit
 
         if ( ! is_dir($mug['prod']) )
             $this->create_path($mug['prod']);
-
+            
         try
         {
-            if ( file_exists($mug_raw) )
+            if ( file_exists($mug_raw) AND ! file_exists($mug_prod) )
             {
                 echo $this->mug_stamp(
                     $mug_raw,
                     $mug_prod,
-                    $this->_offender['firstname'].' '.$this->offender_data['lastname'],
+                    $this->_offender['firstname'].' '.$this->_offender['lastname'],
                     $this->_offender['charges'][0],
                     @$this->_offender['charges'][1]
                 );
