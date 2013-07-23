@@ -19,12 +19,12 @@ class Model_Oregon_Multnomah extends Model_Bandit
 
     protected $urls = [
         'main'      => 'http://www.mcso.us/PAID/Home/SearchResults',
-        
+
         'referrer'  => 'https://mcd911.net/p2c/jailinmates.aspx',
         'list'      => 'https://mcd911.net/p2c/jqHandler.ashx?op=s',
         'detail'    => 'https://mcd911.net/p2c/jailinmates.aspx',
         'mug'       => 'https://mcd911.net/p2c/Mug.aspx',
-        
+
         'login'     => 'http://www.mcso.us/PAID/Account/Login'
     ];
 
@@ -40,11 +40,8 @@ class Model_Oregon_Multnomah extends Model_Bandit
     {
         if ( file_exists($this->cookie) )
             unlink($this->cookie);   // Unlink only works for files, use rmdir for Directories.
-
-        // Creates a mscrape model in Mongo DB.
-        $this->scrape_model($this->name, $this->state, $this->county);
     }
-    
+
     /**
      * Scrape
      *
@@ -56,7 +53,7 @@ class Model_Oregon_Multnomah extends Model_Bandit
     public function scrape()
     {
         $this->do_login();
-        
+
         $raw_list = $this->load_url([
             'target'    => $this->urls['main'],
             'method'    => 'POST',
@@ -65,7 +62,7 @@ class Model_Oregon_Multnomah extends Model_Bandit
                 'SearchType' => 3 // Set Search Type to 3 so we can just get the last week of Bookings
             ]
         ]);
-        
+
 
         $list = $this->clean_html($raw_list['result']);
         $dom = new DOMDocument();
@@ -75,21 +72,21 @@ class Model_Oregon_Multnomah extends Model_Bandit
 
         $xpath = new DOMXpath($dom);
         $rows = $xpath->query('//table[@class="search-results"]/tbody/tr/td[1]/a');
-        
+
         if ( $rows->length < 100 )
             throw new Bandit_Exception('very low results for offenders in xpath query', 'severe');
 
         foreach ( $rows as $row )
         {
             $booking_id = preg_replace('/\/PAID\/Home\/Booking\//i', '', $row->getAttribute('href'));
-            
+
             if ( strlen($booking_id) < 5 )
                 $this->raise('preg match might be off on the table list match', 'report');
-                
+
             $this->extraction($booking_id);
-        }        
+        }
     }
-    
+
     /**
      * Login to the site
      */
@@ -99,15 +96,15 @@ class Model_Oregon_Multnomah extends Model_Bandit
             'target'    => $this->urls['login'],
             'cookie'    => $this->cookie,
         ]);
-        
+
         // If the login page didnt load for some reason, lets get a message
         if ( $login_page['error'] )
             throw new Bandit_Exception('could not load the login page', 'severe');
-                
+
         // Preg match so we can get changing values.
         if ( ! preg_match('/name=\"__RequestVerificationToken\".*?value\=\"(.+?)\"/i', $login_page['result'], $verification) )
             throw new Bandit_Exception('could not get verification token for login page', 'severe');
-        
+
         // Login
         $this->load_url([
             'target'    => $this->urls['main'],
@@ -122,7 +119,7 @@ class Model_Oregon_Multnomah extends Model_Bandit
         ]);
 
     }
-    
+
      /**
      * extraction - Validates and extracts all data
      *
@@ -136,18 +133,18 @@ class Model_Oregon_Multnomah extends Model_Bandit
      *
      */
     public function extraction($booking_id)
-    { 
+    {
         $details = $this->load_url([
             'target'    => 'http://www.mcso.us/PAID/Home/Booking/'.$booking_id,
             'ref'       => $this->urls['main'],
             'cookie'    => $this->cookie,
         ]);
-        
+
         if ( $details['error'] )
             return $this->raise('preg match might be off for: '.$booking_id, 'report');
-        
+
         $details = $details['result'];
-        
+
         // Get the labels to get where the info is going to be.
         $pattern = '/<label.*?>(.*?)<\/label>/ism';
         $labels = $this->parse($pattern, $details);
@@ -162,7 +159,7 @@ class Model_Oregon_Multnomah extends Model_Bandit
             if($value == 'Booking Date')
                 $booking_date_id = $key;
         }
-        
+
         // Get all the divs with values in them.
         $pattern = '/<div\sclass="col-1-3\sdisplay-value">(.*?)<\/div>/ism';
         $divs = $this->parse($pattern, $details);
@@ -178,39 +175,39 @@ class Model_Oregon_Multnomah extends Model_Bandit
             if($key == $booking_date_id)
                 $booking_date = $value;
         }
-        
+
         // Extract last and first name.
         $fullname = explode(', ', $fullname);
         $lastname = $fullname[0];
         $firstname = explode(' ', $fullname[1]);
         $firstname = $firstname[0];
-        
+
         $booking_date = strtotime($booking_date);
-        
-        // Pick up the charges now. 
+
+        // Pick up the charges now.
         $pattern = '/class="charge-description-display">(.*?)<\/span>/ism';
         $charges = $this->parse($pattern, $details);
         $charges = $charges[1];
-        
+
         // This section now creates the images.
-        
+
         // Source of image
         $imagefile = "http://www.mcso.us/PAID/Home/HighResolutionMugshotImage/$booking_id";
-        
+
         $imagename = date('(m-d-Y)', $booking_date).'_'.
             $lastname.'_'.
             $firstname.'_'.
             $booking_id.'.jpg';
-        
+
         $imagepath = '/mugs/oregon/multnomah/'.date('Y', $booking_date).
                 '/week_'.$this->find_week($booking_date).'/';
-       
+
         $new_image = $imagepath.$imagename;
-            
+
         $this->create_path($imagepath);
-        
-        
-         try 
+
+
+         try
          {
             // We do get site because image is behind login so we are getting binary to download
             $data = $this->load_url([
@@ -219,7 +216,7 @@ class Model_Oregon_Multnomah extends Model_Bandit
                 'cookie'    => $this->cookie,
             ]);
             $data = $data['result'];
-            
+
             $destination = $new_image;
             $file = fopen($destination, "w+");
             fputs($file, $data);
@@ -240,6 +237,6 @@ class Model_Oregon_Multnomah extends Model_Bandit
         {
             var_dump($e);
         }
-        
+
     }
 }

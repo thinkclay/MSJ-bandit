@@ -40,9 +40,6 @@ class Model_Michigan_Muskegon extends Model_Bandit
     {
         if ( file_exists($this->cookie) )
             unlink($this->cookie);   // Unlink only works for files, use rmdir for Directories.
-
-        // Creates a mscrape model in Mongo DB.
-        $this->scrape_model($this->name, $this->state, $this->county);
     }
 
     /**
@@ -83,7 +80,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
             $doc = Brass::factory('Brass_Offender', [
                 'booking_id' => $this->name.'_'.$row->book_id
             ])->load();
-            
+
             $this->_offender = [
                 'booking_id'    => $this->name.'_'.$row->book_id,
                 'scrape_time'   => time(),
@@ -100,7 +97,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
                 'county'        => $this->county,
                 'scrape'        => $this->name
             ];
-            
+
             // Record already exists
             if ( $doc->loaded() )
                 $doc->delete();
@@ -108,7 +105,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
             try
             {
                 $doc->values($this->_offender);
-                
+
                 if ( $doc->check() )
                 {
                     $doc->create();
@@ -133,7 +130,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
             $post['ctl00$MasterPage$mainContent$CenterColumnContent$hfRecordIndex'] = $i;
 
             $this->get_mug($post);
-            
+
             sleep(rand(5,100));
         }
 
@@ -225,7 +222,7 @@ class Model_Michigan_Muskegon extends Model_Bandit
 
         if ( ! is_dir($mug['prod']) )
             $this->create_path($mug['prod']);
-            
+
         try
         {
             if ( file_exists($mug_raw) AND ! file_exists($mug_prod) )
