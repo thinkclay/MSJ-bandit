@@ -97,10 +97,6 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
             throw new Bandit_Exception('could not load the offender list', 'severe');
 
         $list = $this->clean_html($list['result']);
-
-        echo $list;
-        echo '<hr /><hr />';
-
         $dom = new DOMDocument();
 
         if ( ! $dom->loadHTML($list) )
@@ -123,6 +119,7 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
 
                 try
                 {
+                    $charges = [];
                     $row = $xpath->query("tr/td", $r);
                     $o_name = array_filter(explode('&nbsp;', trim(htmlentities($row->item(0)->nodeValue))));
                     $o_book_id = array_filter(explode('&nbsp;', trim(htmlentities($row->item(13)->nodeValue))));
@@ -131,12 +128,16 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
                     $o_race = array_filter(explode('&nbsp;', trim(htmlentities($row->item(1)->nodeValue))));
                     $o_charges = array_filter(explode('&nbsp;', trim(htmlentities($row->item(15)->nodeValue))));
                     $o_address = $row->item(3) ? trim(array_filter(explode('&nbsp;', trim(htmlentities($row->item(3)->nodeValue))))[3]) : NULL;
+                    foreach ( explode(' - ', $o_charges[4]) as $charge )
+                    {
+                        $charges[] = trim($charge);
+                    }                    
                 }
                 catch ( ErrorException $e )
                 {
                     $this->errors[] = [
                         'key' => "failed on or near record: ".$pager-1,
-                        'issue' => $e->xdebug_message,
+                        'issue' => $e->getMessage(),
                         'offender' => @$row->item(0)
                     ];
                 }
@@ -153,7 +154,7 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
                     'middlename'    => @$o_name[4],
                     'booking_date'  => strtotime($o_book_time[2]),
                     'address'       => $o_address,
-                    'charges'       => [trim($o_charges[4])],
+                    'charges'       => $charges,
                     'gender'        => trim(strtoupper(array_filter(explode('&nbsp;', trim(htmlentities($row->item(4)->nodeValue))))[1])),
                     'race'          => trim(strtoupper($o_race[1])),
                     'dob'           => strtotime($o_dob[2]),
@@ -162,12 +163,15 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
                     'scrape'        => $this->name
                 ];
 
+                echo "<pre>";
                 var_dump($this->_offender);
+                echo "</pre>";
+                
 
-                // var_dump($this->get_mug($o_book_id[2]));
+                var_dump($this->get_mug($o_book_id[2]));
             }
 
-            // $this->scrape($pager);
+            $this->scrape($pager);
         }
         else
         {
@@ -203,7 +207,6 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
         $home = preg_replace('/(<head>).*(<\/head>)/ism', '', $home['result']);
         $home = preg_replace('/(<html).*(?=<body>)/ism', '', $home);
         $home = $this->clean_html($home);
-        echo $home; exit;
         $dom = new DOMDocument();
 
         if ( ! $dom->loadHTML($home) )
@@ -250,29 +253,29 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
         $mug_raw = $mug['raw'].$mug['name'];
         $mug_prod = $mug['prod'].$mug['name'];
 
-        // Write the raw file if it doesnt exist
-        if ( ! file_exists($mug_raw) )
-        {
-            if ( ! is_dir($mug['raw']) )
-                $this->create_path($mug['raw']);
-
-            // make the file
-            $f = fopen($mug_raw, 'wb');
-            fwrite($f, $raw);
-            fclose($f);
-
-            Image::factory($mug_raw)
-                ->crop(299, 393, 100, 7)
-                ->resize(300, NULL)
-                ->save();
-        }
-
-        if ( ! is_dir($mug['prod']) )
-            $this->create_path($mug['prod']);
-
         try
         {
-            if ( file_exists($mug_raw) )
+            // Write the raw file if it doesnt exist
+            if ( ! file_exists($mug_raw) )
+            {
+                if ( ! is_dir($mug['raw']) )
+                    $this->create_path($mug['raw']);
+    
+                // make the file
+                $f = fopen($mug_raw, 'wb');
+                fwrite($f, $raw);
+                fclose($f);
+    
+                Image::factory($mug_raw)
+                    ->crop(299, 393, 100, 7)
+                    ->resize(300, NULL)
+                    ->save();
+            }
+    
+            if ( ! is_dir($mug['prod']) )
+                $this->create_path($mug['prod']);
+            
+            if ( file_exists($mug_raw) AND ! file_exists($mug_prod) )
             {
                 echo $this->mug_stamp(
                     $mug_raw,
