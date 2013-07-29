@@ -10,7 +10,7 @@
  * @author    Clay McIlrath
  * @see       http://www.mcd911.net/p2c/jailinmates.aspx
  */
-class Model_Oregon_Multnomah extends Model_Bandit
+class Model_State_Oregon_Multnomah extends Model_Bandit
 {
     protected $name     = 'multnomah';   // name of scrape goes here
     protected $county   = 'multnomah';    // if it is a single county, put it here, otherwise remove this property

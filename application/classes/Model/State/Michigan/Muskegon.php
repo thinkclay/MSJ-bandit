@@ -12,7 +12,7 @@
  * @author    Clay McIlrath
  * @see       http://www.mcd911.net/p2c/jailinmates.aspx
  */
-class Model_Michigan_Muskegon extends Model_Bandit
+class Model_State_Michigan_Muskegon extends Model_Bandit
 {
     protected $name     = 'muskegon';   // name of scrape goes here
     protected $county   = 'muskegon';    // if it is a single county, put it here, otherwise remove this property

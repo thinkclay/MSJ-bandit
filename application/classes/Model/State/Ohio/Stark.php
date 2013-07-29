@@ -7,7 +7,7 @@
  * @description
  * @url http://xw.textdata.com:81/cgi/progcgi.exe?program=gbdate?recid=1272743?mfrom=02?dfrom=19?yfrom=2011?mto=02?dto=24?yto=2011?fid=seorj?admin=no?searchby=bookdate
  */
-class Model_Ohio_Stark extends Model_Bandit
+class Model_State_Ohio_Stark extends Model_Bandit
 {
     private $scrape   = 'stark';
     private $state    = 'ohio';

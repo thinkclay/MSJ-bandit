@@ -13,7 +13,7 @@
  * @author    Clay McIlrath
  * @see       http://www.pbso.org/index.cfm?fa=blotter
  */
-class Model_Florida_Palmbeach extends Model_Bandit
+class Model_State_Florida_Palmbeach extends Model_Bandit
 {
     protected $name     = 'palmbeach';   // name of scrape goes here
     protected $county   = 'palm beach';    // if it is a single county, put it here, otherwise remove this property
@@ -102,9 +102,9 @@ class Model_Florida_Palmbeach extends Model_Bandit
 
         $list = $this->clean_html($list['result']);
 
-        echo $list; 
+        echo $list;
         exit;
-        
+
         $dom = new DOMDocument();
 
         if ( ! $dom->loadHTML($list) )
