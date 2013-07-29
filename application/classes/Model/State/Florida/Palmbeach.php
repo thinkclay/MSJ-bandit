@@ -22,7 +22,7 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
 
     protected $urls = [
         'main'      => 'http://www.pbso.org/index.cfm?fa=blotter',
-        'image'     => 'http://services.palmbeachpost.com/editorial/blotter/static/images/pbso_2013023001.jpg',
+        'mug'     => 'http://services.palmbeachpost.com/editorial/blotter/static/images/',
         'news'      => 'http://www.palmbeachpost.com/s/blotter/'
     ];
 
@@ -37,12 +37,8 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
      */
     public function __construct()
     {
-    echo 'here'; exit;
         if ( file_exists($this->cookie) )
             unlink($this->cookie);   // Unlink only works for files, use rmdir for Directories.
-
-        // Creates a mscrape model in Mongo DB.
-        $this->scrape_model($this->name, $this->state, $this->county);
     }
 
     /**
@@ -103,7 +99,7 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
         $list = $this->clean_html($list['result']);
 
         echo $list;
-        exit;
+        echo '<hr /><hr />';
 
         $dom = new DOMDocument();
 
@@ -118,10 +114,10 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
 
         if ( $pager < $count )
         {
+            $pager ++;
+
             foreach ($xpath->query("//table[2]/tr[2]//table[@class='contentTxt c22' or @class='contentTxt c23']") as $r)
             {
-                $pager ++;
-
                 if ( ! $r->hasChildNodes() )
                     continue;
 
@@ -153,13 +149,13 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
                     'scrape_time'   => time(),
                     'updated'       => time(),
                     'firstname'     => $o_name[3],
-                    'lastname'      => $o_name[2],
+                    'lastname'      => str_replace(',', '', $o_name[2]),
                     'middlename'    => @$o_name[4],
                     'booking_date'  => strtotime($o_book_time[2]),
                     'address'       => $o_address,
-                    'charges'       => [trim($o_charges[4])],   // 'OBSTRUCTING JUSTICE / FAILURE TO APPEAR'
-                    'gender'        => strtoupper(array_filter(explode('&nbsp;', trim(htmlentities($row->item(4)->nodeValue))))[1]),
-                    'race'          => strtoupper($o_race[1]),
+                    'charges'       => [trim($o_charges[4])],
+                    'gender'        => trim(strtoupper(array_filter(explode('&nbsp;', trim(htmlentities($row->item(4)->nodeValue))))[1])),
+                    'race'          => trim(strtoupper($o_race[1])),
                     'dob'           => strtotime($o_dob[2]),
                     'state'         => $this->state,
                     'county'        => $this->county,
@@ -167,6 +163,8 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
                 ];
 
                 var_dump($this->_offender);
+
+                // var_dump($this->get_mug($o_book_id[2]));
             }
 
             // $this->scrape($pager);
@@ -202,7 +200,10 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
         if ( $home['error'] )
             throw new Bandit_Exception('could not load the home page', 'severe');
 
-        $home = $this->clean_html($home['result']);
+        $home = preg_replace('/(<head>).*(<\/head>)/ism', '', $home['result']);
+        $home = preg_replace('/(<html).*(?=<body>)/ism', '', $home);
+        $home = $this->clean_html($home);
+        echo $home; exit;
         $dom = new DOMDocument();
 
         if ( ! $dom->loadHTML($home) )
@@ -235,22 +236,14 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
         return $post;
     }
 
-    public function get_mug($post)
+    public function get_mug($booking_id)
     {
         // We need to get the url we've been redirected too, plus update the cookie which it uses to validate
         // and spit out the right image. Not much more we can do to simplify here
-        $referrer = $this->load_url([
-            'target'    => $this->urls['main'],
-            'referrer'  => $this->urls['main'],
-            'method'    => 'POST',
-            'cookie'    => $this->cookie,
-            'data'      => $post
-        ])['status']['url'];
-
         $raw = $this->load_url([
-            'target'    => $this->urls['mug'],
-            'referrer'  => $referrer,
-            'cookie'    => $this->cookie
+            'target'    => $this->urls['mug'].'pbso_'.trim($booking_id).'.jpg',
+            'referrer'  => $this->urls['news'],
+            'cookie'    => $this->cookie,
         ])['result'];
 
         $mug = $this->mug_info($this->_offender);
@@ -267,6 +260,11 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
             $f = fopen($mug_raw, 'wb');
             fwrite($f, $raw);
             fclose($f);
+
+            Image::factory($mug_raw)
+                ->crop(299, 393, 100, 7)
+                ->resize(300, NULL)
+                ->save();
         }
 
         if ( ! is_dir($mug['prod']) )
