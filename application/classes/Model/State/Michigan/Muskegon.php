@@ -73,6 +73,8 @@ class Model_State_Michigan_Muskegon extends Model_Bandit
         $rows = json_decode($list['result'])->rows;
         $list_count = (int) json_decode($list['result'])->records;
 
+        echo "<h1>$list_count</h1>";
+
         for ( $i = 0; $i < $list_count; $i++ )
         {
             $row = $rows[$i];
@@ -100,7 +102,7 @@ class Model_State_Michigan_Muskegon extends Model_Bandit
 
             // Record already exists
             if ( $doc->loaded() )
-                $doc->delete();
+                continue;
 
             try
             {
@@ -108,7 +110,13 @@ class Model_State_Michigan_Muskegon extends Model_Bandit
 
                 if ( $doc->check() )
                 {
-                    $doc->create();
+                    // Set this to the iterator just like the site does to retrieve the detail view
+                    $post['ctl00$MasterPage$mainContent$CenterColumnContent$hfRecordIndex'] = $row->my_num;
+
+                    if ( $this->get_mug($post) )
+                        $doc->create();
+
+                    // sleep(rand(5,100));
                 }
             }
             catch ( Brass_Validation_Exception $e )
@@ -125,13 +133,6 @@ class Model_State_Michigan_Muskegon extends Model_Bandit
 
             if ( $this->errors )
                 var_dump($this->errors);
-
-            // Set this to the iterator just like the site does to retrieve the detail view
-            $post['ctl00$MasterPage$mainContent$CenterColumnContent$hfRecordIndex'] = $i;
-
-            $this->get_mug($post);
-
-            sleep(rand(5,100));
         }
 
         if ( isset($errors) )
@@ -162,10 +163,10 @@ class Model_State_Michigan_Muskegon extends Model_Bandit
         if ( $home['error'] )
             throw new Peruse_Exception('could not load the home page', 'severe');
 
-        $home = $this->clean_html($home['result']);
         $dom = new DOMDocument();
 
-        if ( ! $dom->loadHTML($home) )
+
+        if ( ! $dom->loadHTML($home['result']) )
             throw new Peruse_Exception('could not parse html as DOMDocument', 'severe');
 
         $forms = $dom->getElementsByTagName('form');
@@ -208,6 +209,10 @@ class Model_State_Michigan_Muskegon extends Model_Bandit
         $mug_raw = $mug['raw'].$mug['name'];
         $mug_prod = $mug['prod'].$mug['name'];
 
+        // If it's the default / anon photo, we want to skip
+        if ( file_get_contents(DOCROOT.'default_images/muskegon.png') == $raw )
+            return FALSE;
+
         // Write the raw file if it doesnt exist
         if ( ! file_exists($mug_raw) )
         {
@@ -223,17 +228,25 @@ class Model_State_Michigan_Muskegon extends Model_Bandit
         if ( ! is_dir($mug['prod']) )
             $this->create_path($mug['prod']);
 
+        var_dump($this->_offender);
+        var_dump($raw);
+        echo '<img src="data:image/png;base64, '.base64_encode($raw).'" alt="no image" />';
+
         try
         {
             if ( file_exists($mug_raw) AND ! file_exists($mug_prod) )
             {
-                echo $this->mug_stamp(
+                return $this->mug_stamp(
                     $mug_raw,
                     $mug_prod,
                     $this->_offender['firstname'].' '.$this->_offender['lastname'],
                     $this->_offender['charges'][0],
                     @$this->_offender['charges'][1]
                 );
+            }
+            else
+            {
+                return TRUE;
             }
         }
         catch ( Exception $e )

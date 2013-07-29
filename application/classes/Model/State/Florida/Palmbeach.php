@@ -22,7 +22,7 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
 
     protected $urls = [
         'main'      => 'http://www.pbso.org/index.cfm?fa=blotter',
-        'mug'     => 'http://services.palmbeachpost.com/editorial/blotter/static/images/',
+        'mug'       => 'http://services.palmbeachpost.com/editorial/blotter/static/images/',
         'news'      => 'http://www.palmbeachpost.com/s/blotter/'
     ];
 
@@ -131,7 +131,7 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
                     foreach ( explode(' - ', $o_charges[4]) as $charge )
                     {
                         $charges[] = trim($charge);
-                    }                    
+                    }
                 }
                 catch ( ErrorException $e )
                 {
@@ -166,7 +166,7 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
                 echo "<pre>";
                 var_dump($this->_offender);
                 echo "</pre>";
-                
+
 
                 var_dump($this->get_mug($o_book_id[2]));
             }
@@ -260,21 +260,21 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
             {
                 if ( ! is_dir($mug['raw']) )
                     $this->create_path($mug['raw']);
-    
+
                 // make the file
                 $f = fopen($mug_raw, 'wb');
                 fwrite($f, $raw);
                 fclose($f);
-    
+
                 Image::factory($mug_raw)
                     ->crop(299, 393, 100, 7)
                     ->resize(300, NULL)
                     ->save();
             }
-    
+
             if ( ! is_dir($mug['prod']) )
                 $this->create_path($mug['prod']);
-            
+
             if ( file_exists($mug_raw) AND ! file_exists($mug_prod) )
             {
                 echo $this->mug_stamp(
