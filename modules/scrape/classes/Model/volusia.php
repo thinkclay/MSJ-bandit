@@ -99,7 +99,10 @@ class Model_Volusia extends Model_Scrape
         }
 
         $bandit = new Model_Bandit();
-        $list = $this->curl_search(['bkdatelow' => '8/3/2013', 'bkdatehigh' => '8/4/2013']);
+        $list = $this->curl_search([
+            'bkdatelow' => date('m/j/Y', strtotime('-1 day')),
+            'bkdatehigh' => date('m/j/Y')
+        ]);
 
         libxml_use_internal_errors(true);
         $dom = new DOMDocument();
