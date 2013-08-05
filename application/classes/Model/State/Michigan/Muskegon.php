@@ -116,7 +116,7 @@ class Model_State_Michigan_Muskegon extends Model_Bandit
                     if ( $this->get_mug($post) )
                         $doc->create();
 
-                    // sleep(rand(5,100));
+                    sleep(rand(5,100));
                 }
             }
             catch ( Brass_Validation_Exception $e )

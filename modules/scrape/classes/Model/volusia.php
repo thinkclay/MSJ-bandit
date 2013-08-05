@@ -1,10 +1,10 @@
 <?php defined('SYSPATH') or die('No direct script access.');
- 
+
 /**
  * Model_Volusia
  *
  * @package Scrape
- * @author 	Winter King 
+ * @author 	Winter King
  * @url 	http://www.volusiamug.vcgov.org/search.cfm
  */
 class Model_Volusia extends Model_Scrape
@@ -13,11 +13,11 @@ class Model_Volusia extends Model_Scrape
 	private $county 	= 'volusia'; // if it is a single county, put it here, otherwise remove this property
     private $state      = 'florida'; // state goes here
     private $cookies    = '/tmp/volusia_cookies.txt'; // replace with <scrape name>_cookies.txt
-    
+
     public function __construct()
     {
-        set_time_limit(86400); //make it go forever 
-        //if ( file_exists($this->cookies) ) { unlink($this->cookies); } // Delete cookie file if it exists        
+        set_time_limit(86400); //make it go forever
+        //if ( file_exists($this->cookies) ) { unlink($this->cookies); } // Delete cookie file if it exists
         # create mscrape model if one doesn't already exist
         $mscrape = Mango::factory('mscrape', array('name' => $this->scrape, 'state' => $this->state))->load();
         if (!$mscrape->loaded())
@@ -27,27 +27,68 @@ class Model_Volusia extends Model_Scrape
         # create report
         $this->report = Mango::factory('report', array('scrape' => $this->scrape,'successful' => 0,'failed' => 0,'new_charges' => 0,'total' => 0,'bad_images' => 0,'exists' => 0,'other' => 0,'start_time' => $this->getTime(),'stop_time' => null,'time_taken' => null,'week' => $this->find_week(time()),'year' => date('Y'),'finished' => 0))->create();
     }
-    
+
     function print_r2($val)
     {
         echo '<pre>';
         print_r($val);
         echo  '</pre>';
-    } 
-   
+    }
+
    /**
 	* Scrape - main scrape function makes the curl calls and sends details to the extraction function
 	*
 	* @return true - on completed scrape
 	* @return false - on failed scrape
 	*/
-    function scrape() 
+    function scrape()
     {
     	$bid_start = null;
 		//echo $this->find_week(time());
-		//@TODO Fix this because there i 
-		$last_week = '/mugs/florida/volusia/'.date('Y').'/week_'.($this->find_week(time()) - 1).'/';
-		$files = scandir($last_week);
+		//@TODO Fix this because there i
+		$imagepath = '/mugs/florida/volusia/'.date('Y').'/week_'.($this->find_week(time()) - 1).'/';
+
+
+    if ( ! $check = preg_match('/\/(mugs|raw|original)\/.*\//Uis', $imagepath, $match) )
+        return FALSE;
+
+    if ( ! is_dir($match[0]) )
+    {
+        $oldumask = umask(0);
+        mkdir($match[0], 0777);
+        umask($oldumask);
+    }
+
+    preg_match('/\/(mugs|raw|original)\/.*\/.*\//Uis', $imagepath, $match);
+
+    if ( ! is_dir($match[0]) )
+    {
+        $oldumask = umask(0);
+        mkdir($match[0], 0777);
+        umask($oldumask);
+    }
+
+    $yearpath = preg_replace('/\/week.*/', '', $imagepath);
+
+    // check if year path exists
+    if ( ! is_dir($yearpath) )
+    {
+        $oldumask = umask(0);
+        mkdir($yearpath, 0777);
+        umask($oldumask);
+    }
+
+    // check if full image path exists now
+    preg_match('/\/(mugs|raw|original)\/.*\//', $imagepath, $match);
+
+    if ( ! is_dir($match[0]) )
+    {
+        $oldumask = umask(0);
+        mkdir($match[0], 0777);
+        umask($oldumask);
+    }
+
+		$files = scandir($imagepath);
 		$old_booking_ids = array();
 		foreach ($files as $file)
 		{
@@ -57,8 +98,9 @@ class Model_Volusia extends Model_Scrape
 				$old_booking_ids[] = $match[1];
 			}
 		}
-		$booking_id = 890705;
-		$stop_id = $booking_id + 10000;
+		$booking_id = 1;
+		$stop_id = $booking_id + 2000000;
+
 		$flag = false;
 		while ($flag == false)
 		{
@@ -74,102 +116,28 @@ class Model_Volusia extends Model_Scrape
 	            $this->report->total = ($this->report->total + 1); $this->report->update();
 				$referer = 'http://www.volusiamug.vcgov.org/display.cfm?eventnumber='.$booking_id;
 				$search = $this->curl_go_back($referer);
-			} 
-			$booking_id++;
-			if ($booking_id >= $stop_id)
-			{
-				$flag = true;
 			}
+			$booking_id++;
+
+      sleep(rand(5,100))
+
+			if ($booking_id >= $stop_id)
+				$flag = true;
 		}
-		/*
-    	$races = array('I', 'A', 'B', 'U', 'W');
-		$sexes = array('F', 'M', 'U');
-		$booking_ids = array();
-		foreach ($this->alphabet as $fn)
-		{
-			foreach ($this->alphabet as $ln)
-			{
-				foreach ($races as $race)
-				{
-					foreach ($sexes as $sex)
-					{
-						$search = $this->curl_search($fn, $ln, $race, $sex);
-						
-						if (strpos($search, 'try again') === false)
-						{
-							if (strpos($search, 'Booking Number') !== false) // this means they sent us directly to a details page
-							{
-								// Run Jirans regex and pull out booking number
-								$extraction = $this->extraction($search);
-								if ($extraction == 100) { $this->report->successful = ($this->report->successful + 1); $this->report->update(); }
-					            if ($extraction == 101) { $this->report->other = ($this->report->other + 1); $this->report->update(); }
-					            if ($extraction == 102) { $this->report->bad_images = ($this->report->bad_images + 1); $this->report->update(); }
-					            if ($extraction == 103) { $this->report->exists = ($this->report->exists + 1); $this->report->update(); }
-					            if ($extraction == 104) { $this->report->new_charges = ($this->report->new_charges + 1); $this->report->update(); }
-					            $this->report->total = ($this->report->total + 1); $this->report->update();
-							}
-							else // I have an index page
-							{
-								$pages = array();
-								$flag = true;
-								$check = preg_match('/\<select.*\<\/select/Uis', $search, $match);
-								if ($check)
-								{
-									$check = preg_match_all('/\<option\svalue\=\"(.*)\"/Uis', $match[0], $matches);
-									foreach ($matches[1] as $page)
-									{
-										$pages[] = $page;
-									}
-								}
-								foreach ($pages as $key => $page)
-								{
-									
-									if ($key > 0)
-									{
-										$search = $this->curl_page($page);
-									}
-									$check = preg_match_all('/eventnumber=(.*)\"/Uis', $search, $matches);
-									if ($check)
-									{
-										foreach ($matches[1] as $booking_id)
-										{
-											$details = $this->curl_details($booking_id);
-											$extraction = $this->extraction($details);
-											if ($extraction == 100) { $this->report->successful = ($this->report->successful + 1); $this->report->update(); }
-								            if ($extraction == 101) { $this->report->other = ($this->report->other + 1); $this->report->update(); }
-								            if ($extraction == 102) { $this->report->bad_images = ($this->report->bad_images + 1); $this->report->update(); }
-								            if ($extraction == 103) { $this->report->exists = ($this->report->exists + 1); $this->report->update(); }
-								            if ($extraction == 104) { $this->report->new_charges = ($this->report->new_charges + 1); $this->report->update(); }
-								            $this->report->total = ($this->report->total + 1); $this->report->update();
-											$referer = 'http://www.volusiamug.vcgov.org/display.cfm?eventnumber='.$booking_id;
-											$search = $this->curl_go_back($referer);
-										}
-									}
-									else 
-									{
-										continue;
-									}
-								}
-							}
-						}
-					}
-				}
-			} 
-		}
-		 */ 
+
         $this->report->failed = ($this->report->other + $this->report->bad_images + $this->report->exists + $this->report->new_charges);
         $this->report->finished = 1;
         $this->report->stop_time = time();
         $this->report->time_taken = ($this->report->stop_time - $this->report->start_time);
         $this->report->update();
-        return true; 
+        return true;
     }
-    
+
 	function curl_search($fn = '', $ln = '', $race = '', $sex = '', $booking_id = '')
 	{
 		$url = 'http://www.volusiamug.vcgov.org/search.cfm';
 		$post = 'firstname='.$fn.'&lastname='.$ln.'&bookno='.$booking_id.'&race='.$race.'&sex='.$sex.'&doblow=&dobhigh=&orderby=last_name%2C+first_name&search=Search';
-		$ch = curl_init();   
+		$ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookies);
         curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookies);
@@ -179,13 +147,15 @@ class Model_Volusia extends Model_Scrape
 		curl_setopt($ch, CURLOPT_POSTFIELDS, $post); // add post fields
         $search = curl_exec($ch);
         curl_close($ch);
+
+        echo $search; exit;
 		return $search;
 	}
-	
+
 	function curl_go_back($referer)
 	{
 		$url = 'http://www.volusiamug.vcgov.org/results.cfm';
-		$ch = curl_init();   
+		$ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
 		curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookies);
 		curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookies);
@@ -200,7 +170,7 @@ class Model_Volusia extends Model_Scrape
 	{
 		$url = 'http://www.volusiamug.vcgov.org/results.cfm';
 		$post = 'gotopage1='.$page_num.'&go=+Go%21+';
-		$ch = curl_init();   
+		$ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookies);
         curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookies);
@@ -212,18 +182,18 @@ class Model_Volusia extends Model_Scrape
         curl_close($ch);
 		return $search;
 	}
-	
-      
+
+
     /**
     * curl_details
-    * 
-    * @url 
-    *   
+    *
+    * @url
+    *
     */
     function curl_details($booking_id)
     {
         $url = 'http://www.volusiamug.vcgov.org/display.cfm?eventnumber='.$booking_id;
-        $ch = curl_init();   
+        $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookies);
         curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookies);
@@ -233,16 +203,16 @@ class Model_Volusia extends Model_Scrape
         curl_close($ch);
         return $details;
     }
-    
+
     /**
     * extraction - validates and extracts all data
     *
-    * 
+    *
     * @params $details  - offenders details page
     * @return $ncharges - numerical array of new charges found
     * @return false     - on failed extraction
     * @return true      - on successful extraction
-    * 
+    *
     */
     function extraction($details)
     {
@@ -255,13 +225,13 @@ class Model_Volusia extends Model_Scrape
 				return 101;
 			}
 	        $booking_id = $this->scrape . '_' . $match[1]; // set the booking_id to <scrapename>_<booking_id>
-	      	
+
 			// Attempt to load the offender by booking_id
 	        $offender = Mango::factory('offender', array(
 	            'booking_id' => $booking_id
 	        ))->load();
 	        // If they are not loaded then continue with extraction, otherwise skip this offender
-	        if ( ! $offender->loaded() ) 
+	        if ( ! $offender->loaded() )
 	        {
 	        	// get first and lastnames
 				$check = preg_match('/First\sName.*\<td\>(.*)\<\/td\>/Uis', $details, $match);
@@ -276,7 +246,7 @@ class Model_Volusia extends Model_Scrape
 					return 101;
 				}
 				$lastname = trim(strtoupper($match[1]));
-				
+
 				$check = preg_match('/Book\sdate.*\<td\>(.*)\<\/td\>/Uis', $details, $match);
 				if ( ! $check)
 				{
@@ -287,7 +257,7 @@ class Model_Volusia extends Model_Scrape
 				{
 					return 101;
 				}
-				
+
 				$check = preg_match('/\<td\>\s(\<table\sclass\=\"default\-charges.*\<\/table\>)/Uis', $formatted_details, $match);
 				$explode = explode('<tr>', $match[1]);
 				if (count($explode) < 3)
@@ -321,7 +291,7 @@ class Model_Volusia extends Model_Scrape
 				# Run my full_charges_array through the charges check
 				$ncharges = $this->charges_check($charges, $list);
 				###
-				# validate 
+				# validate
 				if (empty($ncharges)) // skip the offender if ANY new charges were found
 				{
 					// make unique and reset keys
@@ -332,7 +302,7 @@ class Model_Volusia extends Model_Scrape
 					foreach($charges as $charge)
 					{
 						$fcharges[] = htmlspecialchars_decode(strtoupper(trim($charge)), ENT_QUOTES);
-					}	
+					}
 					$dbcharges = $fcharges;
 					// now clear an $extra_fields variable and start setting all extra fields
 					$extra_fields = array();
@@ -395,16 +365,16 @@ class Model_Volusia extends Model_Scrape
 			        $imgpath = $mugpath.$imagename.'.png';
 					// get a count
 					$chargeCount = count($fcharges);
-					// run through charge logic	
+					// run through charge logic
 					// this is all boilerplate
 					$mcharges 	= array(); // reset the array
 			        if ( $chargeCount > 2 ) //if more then 2, run through charges prioritizer
 			        {
 			        	$mcharges 	= $this->charges_prioritizer($list, $fcharges);
 						if ($mcharges == false) { mail('winterpk@bychosen.com', 'Your prioritizer failed in marion scrape', "******Debug Me****** \n-=" . $fullname ."=-" . "\n-=" . $booking_id . "=-"); exit; } // debugging
-			            $mcharges 	= array_merge($mcharges);   
+			            $mcharges 	= array_merge($mcharges);
 			            $charge1 	= $mcharges[0];
-			            $charge2 	= $mcharges[1];    
+			            $charge2 	= $mcharges[1];
 			            $charges 	= $this->charges_abbreviator($list, $charge1, $charge2);
 			            $check = $this->mugStamp($imgpath, $firstname . ' ' . $lastname, $charges[0], $charges[1]);
 						if ($check === false)
@@ -417,32 +387,32 @@ class Model_Volusia extends Model_Scrape
 			        {
 			            $fcharges 	= array_merge($fcharges);
 			            $charge1 	= $fcharges[0];
-			            $charge2 	= $fcharges[1];   
+			            $charge2 	= $fcharges[1];
 			            $charges 	= $this->charges_abbreviator($list, $charge1, $charge2);
 			            $check = $this->mugStamp($imgpath, $firstname . ' ' . $lastname, $charges[0], $charges[1]);
 						if ($check === false)
 						{
 						    unlink($imgpath);
 						    return 101;
-						}           
+						}
 			        }
-			        else 
+			        else
 			        {
 			            $fcharges 	= array_merge($fcharges);
-			            $charge1 	= $fcharges[0];    
-			            $charges 	= $this->charges_abbreviator($list, $charge1);       
+			            $charge1 	= $fcharges[0];
+			            $charges 	= $this->charges_abbreviator($list, $charge1);
 			            $check = $this->mugStamp($imgpath, $firstname . ' ' . $lastname, $charges[0]);
 						if ($check === false)
 						{
 						    unlink($imgpath);
 						    return 101;
-						}   
+						}
 			        }
 					// Abbreviate FULL charge list
 					$dbcharges = $this->charges_abbreviator_db($list, $dbcharges);
 					$dbcharges = array_unique($dbcharges);
 					# BOILERPLATE DATABASE INSERTS
-					$offender = Mango::factory('offender', 
+					$offender = Mango::factory('offender',
 		                array(
 		                	'scrape'		=> $this->scrape,
 		                	'state'			=> $this->state,
@@ -453,7 +423,7 @@ class Model_Volusia extends Model_Scrape
 		                    'booking_date'  => $booking_date,
 		                    'scrape_time'	=> time(),
 		                    'image'         => $imgpath,
-		                    'charges'		=> $dbcharges,                                      
+		                    'charges'		=> $dbcharges,
 		            ))->create();
 					#add extra fields
 					foreach ($extra_fields as $field => $value)
@@ -461,14 +431,14 @@ class Model_Volusia extends Model_Scrape
 						$offender->$field = $value;
 					}
 					$offender->update();
-		           	# now check for the county and create it if it doesnt exist 
+		           	# now check for the county and create it if it doesnt exist
 					$mscrape = Mango::factory('mscrape', array('name' => $this->scrape, 'state' => $this->state))->load();
 					if ( ! $mscrape->loaded() )
 					{
 						$mscrape = Mango::factory('mscrape', array('name' => $this->scrape, 'state' => $this->state))->create();
 					}
 					$mscrape->booking_ids[] = $booking_id;
-					$mscrape->update();	 
+					$mscrape->update();
 	                # END DATABASE INSERTS
 	                return 100;
 				} else {
@@ -481,7 +451,7 @@ class Model_Volusia extends Model_Scrape
 						{
 							if (!empty($value))
 							{
-								$charge = Mango::factory('charge')->create();	
+								$charge = Mango::factory('charge')->create();
 								$charge->charge = $value;
 								$charge->abbr = $value;
 								$charge->order = (int)0;
@@ -489,16 +459,16 @@ class Model_Volusia extends Model_Scrape
 								$charge->scrape = $this->scrape;
 								$charge->new 	= (int)0;
 								$charge->update();
-							}	
+							}
 						}
 					}
 		            return 104;
 				} // ncharges validation
 	        } else { return 103; } // database validation failed
-        } 
+        }
     	catch(Exception $e)
 		{
-			return 101;	
+			return 101;
 		}
     } // end extraction
 } // class end
