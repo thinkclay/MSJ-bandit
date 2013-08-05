@@ -96,10 +96,10 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
         if ( $list['error'] )
             throw new Bandit_Exception('could not load the offender list', 'severe');
 
-        $list = $this->clean_html($list['result']);
+        libxml_use_internal_errors(true);
         $dom = new DOMDocument();
 
-        if ( ! $dom->loadHTML($list) )
+        if ( ! $dom->loadHTML($list['result']) )
             throw new Bandit_Exception('could not parse html as DOMDocument', 'severe');
 
         $xpath = new DOMXPath($dom);

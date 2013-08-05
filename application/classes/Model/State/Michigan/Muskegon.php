@@ -163,8 +163,8 @@ class Model_State_Michigan_Muskegon extends Model_Bandit
         if ( $home['error'] )
             throw new Peruse_Exception('could not load the home page', 'severe');
 
+        libxml_use_internal_errors(true);
         $dom = new DOMDocument();
-
 
         if ( ! $dom->loadHTML($home['result']) )
             throw new Peruse_Exception('could not parse html as DOMDocument', 'severe');
