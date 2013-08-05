@@ -7,7 +7,7 @@
  * @author  Winter King
  * @url   http://www.volusiamug.vcgov.org/search.cfm
  */
-class Model_Volusia extends Model_Scrape
+class Model_State_Florida_Volusia extends Model_Scrape
 {
     private $scrape     = 'volusia'; //name of scrape goes here
     private $county   = 'volusia'; // if it is a single county, put it here, otherwise remove this property
