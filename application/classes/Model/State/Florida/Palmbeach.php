@@ -206,7 +206,8 @@ class Model_State_Florida_Palmbeach extends Model_Bandit
 
         $home = preg_replace('/(<head>).*(<\/head>)/ism', '', $home['result']);
         $home = preg_replace('/(<html).*(?=<body>)/ism', '', $home);
-        $home = $this->clean_html($home);
+
+        libxml_use_internal_errors(true);
         $dom = new DOMDocument();
 
         if ( ! $dom->loadHTML($home) )
