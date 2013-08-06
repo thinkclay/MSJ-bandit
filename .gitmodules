@@ -16,6 +16,3 @@
 [submodule "modules/minion"]
 	path = modules/minion
 	url = git://github.com/kohana/minion.git
-[submodule "modules/mango"]
-	path = modules/mango
-	url = git://github.com/Wouterrr/MangoDB.git

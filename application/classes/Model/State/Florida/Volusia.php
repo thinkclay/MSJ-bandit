@@ -99,6 +99,7 @@ class Model_State_Florida_Volusia extends Model_Scrape
         }
 
         $bandit = new Model_Bandit();
+
         $list = $this->curl_search([
             'bkdatelow' => date('m/j/Y', strtotime('-1 day')),
             'bkdatehigh' => date('m/j/Y')
@@ -138,8 +139,6 @@ class Model_State_Florida_Volusia extends Model_Scrape
                     $referer = 'http://www.volusiamug.vcgov.org/display.cfm?eventnumber='.$booking_id;
                     $search = $this->curl_go_back($referer);
                 }
-
-                sleep(rand(5,100));
             }
 
         }
