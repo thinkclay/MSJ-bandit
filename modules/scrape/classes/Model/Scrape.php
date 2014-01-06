@@ -1407,6 +1407,7 @@ class Model_Scrape extends Model
 			$oldumask = umask(0);
     		mkdir($statepath, 0777);
     		umask($oldumask);
+			echo 'executed state';
 		}
 		$check = preg_match('/\/mugs\/.*\/.*\//Uis', $imagepath, $match);
 		if ( ! $check)
@@ -1419,6 +1420,7 @@ class Model_Scrape extends Model
 			$oldumask = umask(0);
     		mkdir($countypath, 0777);
     		umask($oldumask);
+			echo 'executed county';
 		}
 		$yearpath = preg_replace('/\/week.*/', '', $imagepath);
         # check if year path exists
@@ -1428,14 +1430,17 @@ class Model_Scrape extends Model
     		$oldumask = umask(0);
     		mkdir($yearpath, 0777);
     		umask($oldumask);
+			echo 'executed year';
     	}
         # check if image path exists
+        $imagepath;
         if (!is_dir($imagepath))
         {
             # create imagepath if it doesn't exist
             $oldumask = umask(0);
             mkdir($imagepath, 0777);
             umask($oldumask);
+			echo 'executed image path';
         }
 		return $imagepath;
 	}
@@ -1799,7 +1804,7 @@ class Model_Scrape extends Model
 			{
 				echo 'in here1';
 				exit;
-				//mail('winterpk@bychosen.com', 'conditional was triggered on line 951 in scrape model', "scrape.php model conditional \n\nif (count($charges_ordered) > 1)\n\n was triggered");
+				//mail('bustedreport@gmail.com', 'conditional was triggered on line 951 in scrape model', "scrape.php model conditional \n\nif (count($charges_ordered) > 1)\n\n was triggered");
 				return false;
 			}
 		}
@@ -1807,7 +1812,7 @@ class Model_Scrape extends Model
 		{
 			echo 'in here1';
 				exit;
-			//mail('winterpk@bychosen.com', 'conditional was triggered on line 949 in scrape model', "scrape.php model conditional \n\n(!empty($charges_ordered))\n\n was triggered");
+			//mail('bustedreport@gmail.com', 'conditional was triggered on line 949 in scrape model', "scrape.php model conditional \n\n(!empty($charges_ordered))\n\n was triggered");
 			return false;
 		}
     }
@@ -1869,13 +1874,13 @@ class Model_Scrape extends Model
 	        }
 			else
 			{
-				mail('winterpk@bychosen.com', 'conditional was triggered on line 951 in scrape model', "scrape.php model conditional \n\nif (count($charges_ordered) > 1)\n\n was triggered");
+				mail('bustedreport@gmail.com', 'conditional was triggered on line 951 in scrape model', "scrape.php model conditional \n\nif (count($charges_ordered) > 1)\n\n was triggered");
 				return false;
 			}
 		}
 		else
 		{
-			mail('winterpk@bychosen.com', 'conditional was triggered on line 949 in scrape model', "scrape.php model conditional \n\n(!empty($charges_ordered))\n\n was triggered");
+			mail('bustedreport@gmail.com', 'conditional was triggered on line 949 in scrape model', "scrape.php model conditional \n\n(!empty($charges_ordered))\n\n was triggered");
 			return false;
 		}
     }
@@ -1936,13 +1941,13 @@ class Model_Scrape extends Model
 	        }
 			else
 			{
-				//mail('winterpk@bychosen.com', 'conditional was triggered on line 951 in scrape model', "scrape.php model conditional \n\nif (count($charges_ordered) > 1)\n\n was triggered");
+				//mail('bustedreport@gmail.com', 'conditional was triggered on line 951 in scrape model', "scrape.php model conditional \n\nif (count($charges_ordered) > 1)\n\n was triggered");
 				return false;
 			}
 		}
 		else
 		{
-			//mail('winterpk@bychosen.com', 'conditional was triggered on line 949 in scrape model', "scrape.php model conditional \n\n(!empty($charges_ordered))\n\n was triggered");
+			//mail('bustedreport@gmail.com', 'conditional was triggered on line 949 in scrape model', "scrape.php model conditional \n\n(!empty($charges_ordered))\n\n was triggered");
 			return false;
 		}
     }
@@ -2174,7 +2179,7 @@ class Model_Scrape extends Model
 						}
 						$dupe_offender->delete();
 					}
-					mail('winterpk@bychosen.com', 'Dupes found in ' . $county, $email);
+					mail('bustedreport@gmail.com', 'Dupes found in ' . $county, $email);
 	            }
 	        }
         } else { return false; }

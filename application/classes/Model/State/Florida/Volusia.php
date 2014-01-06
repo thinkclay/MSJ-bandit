@@ -4,13 +4,13 @@
  * Model_Volusia
  *
  * @package Scrape
- * @author  Winter King
+ * @author  Marketermatt
  * @url   http://www.volusiamug.vcgov.org/search.cfm
  */
 class Model_State_Florida_Volusia extends Model_Scrape
 {
     private $scrape     = 'volusia'; //name of scrape goes here
-    private $county   = 'volusia'; // if it is a single county, put it here, otherwise remove this property
+    private $county     = 'volusia'; // if it is a single county, put it here, otherwise remove this property
     private $state      = 'florida'; // state goes here
     private $cookies    = '/tmp/volusia_cookies.txt'; // replace with <scrape name>_cookies.txt
 
@@ -33,8 +33,7 @@ class Model_State_Florida_Volusia extends Model_Scrape
         echo '<pre>';
         print_r($val);
         echo  '</pre>';
-    }
-
+    } 
    /**
     * Scrape - main scrape function makes the curl calls and sends details to the extraction function
     *
@@ -104,7 +103,11 @@ class Model_State_Florida_Volusia extends Model_Scrape
             'bkdatelow' => date('m/j/Y', strtotime('-1 day')),
             'bkdatehigh' => date('m/j/Y')
         ]);
-
+		
+		/*var_dump($list);
+		exit;
+		*/
+		
         libxml_use_internal_errors(true);
         $dom = new DOMDocument();
 
@@ -115,40 +118,42 @@ class Model_State_Florida_Volusia extends Model_Scrape
 
         foreach ( $xpath->query("//table[@class='default']//tr[1]/td[1]") as $row )
         {
+        	/*var_dump($row);
+			continue;*/
+			
             if ( preg_match('/(?<=\().+?(?=\))/', trim($row->nodeValue), $matches) )
             {
+				
                 $booking_id = $matches[0];
                 $details = $this->curl_search(['bookno' => $booking_id]);
-
+				
                 if ( strpos($details, '<form action="search.cfm" method="post">') === false )
                 {
                     $extraction = $this->extraction($details);
-
-                    if ( $extraction == 100 )
-                        $this->report->successful = ($this->report->successful + 1); $this->report->update();
-                    if ( $extraction == 101 )
-                        $this->report->other = ($this->report->other + 1); $this->report->update();
-                    if ( $extraction == 102 )
-                        $this->report->bad_images = ($this->report->bad_images + 1); $this->report->update();
-                    if ( $extraction == 103 )
-                        $this->report->exists = ($this->report->exists + 1); $this->report->update();
-                    if ( $extraction == 104 )
-                        $this->report->new_charges = ($this->report->new_charges + 1); $this->report->update();
-
+					
+					print_r($extraction);
+					echo '<br>';
+					continue;
+                    
+                    if ( $extraction == 100 ) { $this->report->successful = ($this->report->successful + 1); $this->report->update(); }
+					if ( $extraction == 101 ) { $this->report->other = ($this->report->other + 1); $this->report->update(); }
+                    if ( $extraction == 102 ) { $this->report->bad_images = ($this->report->bad_images + 1); $this->report->update(); }
+                    if ( $extraction == 103 ) { $this->report->exists = ($this->report->exists + 1); $this->report->update(); }
+                    if ( $extraction == 104 ) { $this->report->new_charges = ($this->report->new_charges + 1); $this->report->update(); }
                     $this->report->total = ($this->report->total + 1); $this->report->update();
+					
                     $referer = 'http://www.volusiamug.vcgov.org/display.cfm?eventnumber='.$booking_id;
                     $search = $this->curl_go_back($referer);
                 }
             }
 
-        }
-
+        } 
         $this->report->failed = ($this->report->other + $this->report->bad_images + $this->report->exists + $this->report->new_charges);
         $this->report->finished = 1;
         $this->report->stop_time = time();
         $this->report->time_taken = ($this->report->stop_time - $this->report->start_time);
         $this->report->update();
-
+		$this->print_r2($this->report->as_array());
         return true;
     }
 
@@ -254,8 +259,9 @@ class Model_State_Florida_Volusia extends Model_Scrape
             $formatted_details = preg_replace("'\s+'", ' ', $details);
 
             if ( ! preg_match('/Booking\sNumber.*\<td\>(.*)\<\/td\>/Uis', $details, $match) )
-                return 101;
-
+                return 'Booking Number Not Found';
+                // return 101;
+				
             $booking_id = $this->scrape . '_' . $match[1]; // set the booking_id to <scrapename>_<booking_id>
 
             // Attempt to load the offender by booking_id
@@ -264,32 +270,40 @@ class Model_State_Florida_Volusia extends Model_Scrape
             // If they are not loaded then continue with extraction, otherwise skip this offender
             if ( ! $offender->loaded() )
             {
+                // var_dump($match);echo '<br />';
+				// var_dump($details);echo '<br />';
+
                 // get first and lastnames
                 if ( ! preg_match('/First\sName.*\<td\>(.*)\<\/td\>/Uis', $details, $match) )
-                    return 101;
+                    return 'First Name Not Found';
+                    // return 101;
 
                 $firstname = trim(strtoupper($match[1]));
 
                 if ( ! preg_match('/Last\sName.*\<td\>(.*)\<\/td\>/Uis', $details, $match) )
-                    return 101;
+                    return 'Last Name Not Found';
+                    // return 101;
 
                 $lastname = trim(strtoupper($match[1]));
 
                 if ( ! preg_match('/Book\sdate.*\<td\>(.*)\<\/td\>/Uis', $details, $match) )
-                    return 101;
+                    return 'Book Dates Not Found';
+                    // return 101;
 
                 $booking_date = $this->clean_string_utf8(
                     htmlspecialchars_decode(str_replace('&nbsp;', ' ', trim(strtotime($match[1]))), ENT_QUOTES)
                 );
 
                 if ( $booking_date > strtotime('midnight', strtotime("+1 day")) )
-                    return 101;
+                    return 'Booking Date strtotime Not Found';
+                    // return 101;
 
                 preg_match('/\<td\>\s(\<table\sclass\=\"default\-charges.*\<\/table\>)/Uis', $formatted_details, $match);
-                $explode = explode('<tr>', $match[1]);
+                $explode = explode('<tr>', $match[0]);
 
                 if ( count($explode) < 3 )
-                    return 101;
+					return 'Explode 3 Not Found';
+					// return 101;
 
                 $charges = $list = $ncharges = $fcharges = $extra_fields = $mcharges = [];
 
@@ -297,15 +311,20 @@ class Model_State_Florida_Volusia extends Model_Scrape
                 {
                     if ( $key > 1 )
                     {
-                        if ( preg_match('/\<center\>(.*)\<\/center\>/Uis', $value, $match) )
-                        {
-                            $charges[] = $this->clean_string_utf8(
-                                htmlspecialchars_decode(str_replace('&nbsp;', ' ', trim($match[1])), ENT_QUOTES)
-                            );
-                        }
+                    	if ( preg_match('/\<td\>(.*)\<\/center\>/Uis', $value, $match) ) {
+                    		$charges[] = $this->clean_string_utf8(
+	                                htmlspecialchars_decode(str_replace('&nbsp;', ' ', trim($match[1])), ENT_QUOTES)
+	                            );
+                    	// } else {
+	                        // if ( preg_match('/\<center\>(.*)\<\/center\>/Uis', $value, $match) )
+	                        // {
+	                            // $charges[] = $this->clean_string_utf8(
+	                                // htmlspecialchars_decode(str_replace('&nbsp;', ' ', trim($match[1])), ENT_QUOTES)
+	                            // );
+	                        // }
+						}
                     }
                 }
-
                 // the next lines between the ### are boilerplate used to check for new charges
                 // this creates a charges object for all charges that are not new for this county
                 $charges_object = Mango::factory('charge', array('county' => $this->scrape, 'new' => 0))->load(false)->as_array(false);
@@ -368,9 +387,10 @@ class Model_State_Florida_Volusia extends Model_Scrape
 
                     if ( ! $dom->loadHTML($formatted_details) )
                         throw new Bandit_Exception('could not parse html as DOMDocument', 'severe');
-
+					
+					
                     $xpath = new DOMXPath($dom);
-                    $image_link = 'http://www.volusiamug.vcgov.org/'.$xpath->query("//table[@class='default']//tr[1]/td[1]/img/@src")->item(0)->nodeValue;
+                    $image_link = 'http://www.volusiamug.vcgov.org/'.$xpath->query("//div[@id='Mugshot']/img/@src")->item(0)->nodeValue;
 
                     // set image name
                     $imagename = date('(m-d-Y)', $booking_date) . '_' . $lastname . '_' . $firstname . '_' . $booking_id;
@@ -408,7 +428,7 @@ class Model_State_Florida_Volusia extends Model_Scrape
                         if ( $mcharges == false )
                         {
                             mail(
-                                'winterpk@bychosen.com',
+                                'shane@shanestrong.com',
                                 'Your prioritizer failed in marion scrape',
                                 "******Debug Me****** \n-=" . $fullname ."=-" . "\n-=" . $booking_id . "=-"
                             );
@@ -423,7 +443,8 @@ class Model_State_Florida_Volusia extends Model_Scrape
                         if ( $check === false )
                         {
                             unlink($imgpath);
-                            return 101;
+							return 'Mugstamp Failed';
+                            // return 101;
                         }
                     }
                     else if ( $chargeCount == 2 )
@@ -436,7 +457,8 @@ class Model_State_Florida_Volusia extends Model_Scrape
                         if ( ! $this->mugStamp($imgpath, $firstname . ' ' . $lastname, $charges[0], $charges[1]) )
                         {
                             unlink($imgpath);
-                            return 101;
+							return 'Mugstamp 453';
+                            // return 101;
                         }
                     }
                     else
@@ -448,7 +470,8 @@ class Model_State_Florida_Volusia extends Model_Scrape
                         if ( ! $this->mugStamp($imgpath, $firstname . ' ' . $lastname, $charges[0]) )
                         {
                             unlink($imgpath);
-                            return 101;
+							return 'Mugstamp 466';
+                            // return 101;
                         }
                     }
 
@@ -531,6 +554,7 @@ class Model_State_Florida_Volusia extends Model_Scrape
         }
         catch(Exception $e)
         {
+        	// print_r($e);	
             return 101;
         }
     } // end extraction
